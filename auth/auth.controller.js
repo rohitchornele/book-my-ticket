@@ -23,15 +23,15 @@ const login = async (req, res) => {
         // ✅ Set cookies
         res.cookie("accessToken", accessToken, {
             httpOnly: true,
-            secure: false, // true in production
-            sameSite: "lax",
+            secure: true, // true in production
+            sameSite: "none",
             maxAge: 15 * 60 * 1000,
         });
 
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
-            secure: false,
-            sameSite: "lax",
+            secure: true,
+            sameSite: "none",
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
