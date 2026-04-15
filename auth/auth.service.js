@@ -63,7 +63,7 @@ const registerServices = async ({ firstName, lastName, email, password, role }) 
 }
 
 
-const loginService = async (email, password) => {
+const loginService = async ({ email, password }) => {
 
     try {
         const userArray = await db.select().from(userTable).where(eq(userTable.email, email));
@@ -77,7 +77,7 @@ const loginService = async (email, password) => {
         const salt = user.salt
         const hash = createHmac('sha256', salt).update(password).digest('hex');
 
-        if (user?.password !== hash) {
+        if (user.password !== hash) {
             throw ApiError.badRequest("Invalid credentials")
         }
 
@@ -90,8 +90,7 @@ const loginService = async (email, password) => {
 
         const hashedRefreshToken = hashToken(refreshToken);
 
-        const updatingUSer = await db.update(userTable).set({ refreshToken: hashedRefreshToken })
-            .where(eq(userTable.id, user.id)).returning();
+        const updatingUSer = await db.update(userTable).set({ refreshToken: hashedRefreshToken }).where(eq(userTable.id, user.id)).returning();
 
         const userObj = updatingUSer[0];
         delete userObj.password;
@@ -100,7 +99,8 @@ const loginService = async (email, password) => {
 
         return { user: userObj, accessToken, refreshToken };
     } catch (error) {
-        console.error("Error while login : ", error)
+        console.error("Error while login : ", error);
+        throw error;
     }
 }
 

@@ -14,13 +14,8 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
     try {
-        console.log("req body : ", req.body)
-        const email = req.body.email;
-        const password = req.body.password;
-
-        const result = await loginService(email, password);
-        
-        if(!result) {
+        const result = await loginService(req.body);
+        if (!result) {
             throw ApiError.badRequest("No data found in request body")
         }
 
@@ -47,7 +42,11 @@ const login = async (req, res) => {
         return ApiResponse.ok(res, "Successfully Logged In", user);
 
     } catch (error) {
-        console.error("Error while login : ", error)
+        console.error("Error while login : ", error);
+        return res.status(error.statusCode || 500).json({
+            success: false,
+            message: error.message || "Internal Server Error"
+        });
     }
 };
 
