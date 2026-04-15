@@ -63,7 +63,7 @@ const registerServices = async ({ firstName, lastName, email, password, role }) 
 }
 
 
-const loginService = async ({ email, password }) => {
+const loginService = async (email, password) => {
 
     try {
         const userArray = await db.select().from(userTable).where(eq(userTable.email, email));

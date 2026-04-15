@@ -14,7 +14,12 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
     try {
-        const result = await loginService(req.body);
+        console.log("req body : ", req.body)
+        const email = req.body.email;
+        const password = req.body.password;
+
+        const result = await loginService(email, password);
+        
         if(!result) {
             throw ApiError.badRequest("No data found in request body")
         }
