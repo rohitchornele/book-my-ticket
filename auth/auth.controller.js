@@ -16,7 +16,7 @@ const login = async (req, res) => {
     try {
         const result = await loginService(req.body);
         if(!result) {
-            throw ApiError.badRequest("Something went wrong")
+            throw ApiError.badRequest("No data found in request body")
         }
 
         const { user, accessToken, refreshToken } = result;
