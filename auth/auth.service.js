@@ -14,14 +14,12 @@ const hashToken = (token) => {
 
 
 const registerServices = async ({ firstName, lastName, email, password, role }) => {
-
     try {
-        const existingUser = await db.select().from(userTable).where(eq(userTable.email, email))
+        const existingUser = await db.select().from(userTable).where(eq(userTable.email, email));
 
-        // console.log("ExistingUser : ", existingUser)
-
-
-        if (existingUser.length > 0) throw ApiError.conflict("user email already exist")
+        if (existingUser.length > 0) {
+            throw ApiError.conflict("user email already exist");
+        }
 
         const salt = randomBytes(32).toString('hex');
         const hash = createHmac('sha256', salt).update(password).digest('hex');
@@ -36,31 +34,33 @@ const registerServices = async ({ firstName, lastName, email, password, role }) 
             role,
             salt,
             verificationToken: hashedToken
-        }).returning()
+        }).returning();
 
         const user = insertedUser[0];
 
-        // console.log("inserted user = ", user)
+        if (!user) {
+            throw new Error("User insertion failed");
+        }
 
-        // const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${rawToken}`
-        const verificationUrl = `${process.env.FRONTEND_URL}/auth/verify-email/${rawToken}`
-        // console.log("reister user = ", user)
+        const verificationUrl = `${process.env.FRONTEND_URL}/auth/verify-email/${rawToken}`;
 
-        // try {
-        //     await sendVerificationEmail(user, verificationUrl);
-        // } catch (err) {
-        //     console.log("Email failed:", err.message);
-        // }
+        try {
+            await sendVerificationEmail(user, verificationUrl);
+        } catch (err) {
+            console.log("Email failed:", err.message);
+        }
 
         const userObj = { ...user };
         delete userObj.password;
         delete userObj.verificationToken;
 
         return userObj;
+
     } catch (error) {
-        console.error("Error while user registration : ", error)
+        console.error("Error while user registration : ", error);
+        throw error; // 🔥 FIX
     }
-}
+};
 
 
 const loginService = async ({ email, password }) => {

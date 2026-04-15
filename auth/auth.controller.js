@@ -8,7 +8,11 @@ const register = async (req, res) => {
         const user = await registerServices(req.body);
         return ApiResponse.created(res, "Registration successful", user);
     } catch (error) {
-        console.error("Error in sign up : ", error)
+        console.error("Error in sign up : ", error);
+        return res.status(error.statusCode || 500).json({
+            success: false,
+            message: error.message || "Registration failed"
+        });
     }
 };
 
