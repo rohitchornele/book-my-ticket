@@ -16,7 +16,6 @@ import authRouter from "./auth/auth.routes.js";
 import path from 'path'
 import cookieParser from "cookie-parser";
 import { protect } from "./auth/auth.middleware.js";
-import { drizzle } from "drizzle-orm/node-postgres";
 
 // import pkg from "pg";
 // const { Pool } = pkg;
@@ -45,7 +44,7 @@ const port = process.env.PORT || 8080;
 
 // for production : 
 
-export const pool = new pg.Pool({
+const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
     rejectUnauthorized: false,
