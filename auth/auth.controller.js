@@ -15,12 +15,12 @@ const register = async (req, res) => {
 const login = async (req, res) => {
     try {
         const result = await loginService(req.body);
+        if(!result) {
+            throw ApiError.badRequest("Something went wrong")
+        }
 
         const { user, accessToken, refreshToken } = result;
 
-        // console.log("Logged in user = ", user);
-
-        // ✅ Set cookies
         res.cookie("accessToken", accessToken, {
             httpOnly: true,
             secure: true, // true in production
