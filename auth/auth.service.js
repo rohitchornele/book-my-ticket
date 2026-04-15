@@ -77,7 +77,7 @@ const loginService = async ({ email, password }) => {
         const salt = user.salt
         const hash = createHmac('sha256', salt).update(password).digest('hex');
 
-        if (user.password !== hash) {
+        if (user?.password !== hash) {
             throw ApiError.badRequest("Invalid credentials")
         }
 
@@ -90,10 +90,10 @@ const loginService = async ({ email, password }) => {
 
         const hashedRefreshToken = hashToken(refreshToken);
 
-        await db.update(userTable).set({ refreshToken: hashedRefreshToken })
-            .where(eq(userTable.id, user.id));
+        const updatingUSer = await db.update(userTable).set({ refreshToken: hashedRefreshToken })
+            .where(eq(userTable.id, user.id)).returning();
 
-        const userObj = { ...user };
+        const userObj = updatingUSer[0];
         delete userObj.password;
         delete userObj.verificationToken;
         delete userObj.refreshToken;
