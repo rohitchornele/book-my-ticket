@@ -15,85 +15,93 @@ const hashToken = (token) => {
 
 const registerServices = async ({ firstName, lastName, email, password, role }) => {
 
-    const existingUser = await db.select().from(userTable).where(eq(userTable.email, email))
-
-    // console.log("ExistingUser : ", existingUser)
-
-
-    if (existingUser.length > 0) throw ApiError.conflict("user email already exist")
-
-    const salt = randomBytes(32).toString('hex');
-    const hash = createHmac('sha256', salt).update(password).digest('hex');
-
-    const { rawToken, hashedToken } = generateResetToken();
-
-    const insertedUser = await db.insert(userTable).values({
-        firstName,
-        lastName,
-        email,
-        password: hash,
-        role,
-        salt,
-        verificationToken: hashedToken
-    }).returning()
-
-    const user = insertedUser[0];
-
-    // console.log("inserted user = ", user)
-
-    // const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${rawToken}`
-    const verificationUrl = `${process.env.FRONTEND_URL}/auth/verify-email/${rawToken}`
-    // console.log("reister user = ", user)
-
     try {
-        await sendVerificationEmail(user, verificationUrl);
-    } catch (err) {
-        console.log("Email failed:", err.message);
+        const existingUser = await db.select().from(userTable).where(eq(userTable.email, email))
+
+        // console.log("ExistingUser : ", existingUser)
+
+
+        if (existingUser.length > 0) throw ApiError.conflict("user email already exist")
+
+        const salt = randomBytes(32).toString('hex');
+        const hash = createHmac('sha256', salt).update(password).digest('hex');
+
+        const { rawToken, hashedToken } = generateResetToken();
+
+        const insertedUser = await db.insert(userTable).values({
+            firstName,
+            lastName,
+            email,
+            password: hash,
+            role,
+            salt,
+            verificationToken: hashedToken
+        }).returning()
+
+        const user = insertedUser[0];
+
+        // console.log("inserted user = ", user)
+
+        // const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${rawToken}`
+        const verificationUrl = `${process.env.FRONTEND_URL}/auth/verify-email/${rawToken}`
+        // console.log("reister user = ", user)
+
+        try {
+            await sendVerificationEmail(user, verificationUrl);
+        } catch (err) {
+            console.log("Email failed:", err.message);
+        }
+
+        const userObj = { ...user };
+        delete userObj.password;
+        delete userObj.verificationToken;
+
+        return userObj;
+    } catch (error) {
+        console.error("Error while user registration : ", error)
     }
-
-    const userObj = { ...user };
-    delete userObj.password;
-    delete userObj.verificationToken;
-
-    return userObj;
 }
 
 
 const loginService = async ({ email, password }) => {
 
-    const userArray = await db.select().from(userTable).where(eq(userTable.email, email));
+    try {
+        const userArray = await db.select().from(userTable).where(eq(userTable.email, email));
 
-    if (!userArray.length) {
-        throw ApiError.badRequest("Invalid credentials")
+        if (!userArray.length) {
+            throw ApiError.badRequest("Invalid credentials")
+        }
+
+        const user = userArray[0];
+
+        const salt = user.salt
+        const hash = createHmac('sha256', salt).update(password).digest('hex');
+
+        if (user.password !== hash) {
+            throw ApiError.badRequest("Invalid credentials")
+        }
+
+        if (!user.emailVerified) {
+            throw ApiError.forbidden("Please verify your email, before login")
+        }
+
+        const refreshToken = generateRefreshToken({ id: user.id })
+        const accessToken = generateAccessToken({ id: user.id, role: user.role })
+
+        const hashedRefreshToken = hashToken(refreshToken);
+
+        await db.update(userTable).set({ refreshToken: hashedRefreshToken })
+            .where(eq(userTable.id, user.id));
+
+        const userObj = { ...user };
+        delete userObj.password;
+        delete userObj.verificationToken;
+        delete userObj.refreshToken;
+
+        return { user: userObj, accessToken, refreshToken };
+    } catch (error) {
+        console.error("Error while login : ", error)
     }
-
-    const user = userArray[0];
-
-    const salt = user.salt
-    const hash = createHmac('sha256', salt).update(password).digest('hex');
-
-    if (user.password !== hash) {
-        throw ApiError.badRequest("Invalid credentials")
-    }
-
-    if (!user.emailVerified) {
-        throw ApiError.forbidden("Please verify your email, before login")
-    }
-
-    const refreshToken = generateRefreshToken({ id: user.id })
-    const accessToken = generateAccessToken({ id: user.id, role: user.role })
-
-    const hashedRefreshToken = hashToken(refreshToken);
-
-    await db.update(userTable).set({ refreshToken: hashedRefreshToken })
-        .where(eq(userTable.id, user.id));
-
-    const userObj = { ...user };
-    delete userObj.password;
-    delete userObj.verificationToken;
-    delete userObj.refreshToken;
-
-    return { user: userObj, accessToken, refreshToken };
 }
 
 const refreshService = async (token) => {
@@ -118,45 +126,46 @@ const refreshService = async (token) => {
 
 
 const logoutService = async (userId) => {
-    // const userArray = await db.select().from(userTable).where(eq(userTable.id, userId));
-    // if (!userArray.length) {
-    //     throw ApiError.badRequest("User not found")
-    // }
 
-    // const user = userArray[0];
+    try {
+        await db.update(userTable).set({ refreshToken: null }).where(eq(userTable.id, userId));
 
-    await db.update(userTable).set({ refreshToken: null }).where(eq(userTable.id, userId));
+    } catch (error) {
+        console.error("Error in logout ", error)
+    }
+
 }
 
 const verifyEmailService = async (token) => {
 
-    const hashedToken = hashToken(token)
+    try {
+        const hashedToken = hashToken(token)
 
+        const userArray = await db.select().from(userTable).where(eq(userTable.verificationToken, hashedToken));
 
-    // console.log("Token from URL : ", token);
-    // console.log("Hashed Token : ", hashedToken);
+        const user = userArray[0];
 
-    // search using hashed token 
-    const userArray = await db.select().from(userTable).where(eq(userTable.verificationToken, hashedToken));
+        // console.log("Verifying user : ", user)
 
-    const user = userArray[0];
+        if (!user) {
+            throw ApiError.badRequest("user not available")
+        }
 
-    // console.log("Verifying user : ", user)
+        // clear token and verify user 
+        user.emailVerified = true;
+        user.verificationToken = null;
 
-    if (!user) {
-        throw ApiError.badRequest("user not available")
+        await db.update(userTable).set({
+            emailVerified: true,
+            verificationToken: null,
+        }).where(eq(userTable.id, user.id));
+
+        return user
+    } catch (error) {
+        console.error("Email not verified : ", error)
     }
 
-    // clear token and verify user 
-    user.emailVerified = true;
-    user.verificationToken = null;
 
-    await db.update(userTable).set({
-        emailVerified: true,
-        verificationToken: null,
-    }).where(eq(userTable.id, user.id));
-
-    return user
 }
 
 
