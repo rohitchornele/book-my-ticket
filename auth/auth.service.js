@@ -44,11 +44,11 @@ const registerServices = async ({ firstName, lastName, email, password, role }) 
 
         const verificationUrl = `${process.env.FRONTEND_URL}/auth/verify-email/${rawToken}`;
 
-        try {
-            await sendVerificationEmail(user, verificationUrl);
-        } catch (err) {
-            console.log("Email failed:", err.message);
-        }
+        // try {
+        //     await sendVerificationEmail(user, verificationUrl);
+        // } catch (err) {
+        //     console.log("Email failed:", err.message);
+        // }
 
         const userObj = { ...user };
         delete userObj.password;
