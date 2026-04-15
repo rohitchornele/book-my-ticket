@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stellar Seat Booking</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap");
+    body {
+      font-family: "Outfit", sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+
+  <!-- 🔥 TOPBAR -->
+  <div class="w-full bg-slate-900/80 backdrop-blur border-b border-slate-700 px-6 py-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold text-emerald-400 tracking-wide">
+      🎬 ChaiCode Cinema
+    </h1>
+
+    <div class="flex items-center gap-4">
+      <span id="greeting" class="text-slate-300 font-medium">
+        Welcome 👋
+      </span>
+
+      <div id="avatar" class="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center font-bold text-white">
+        U
+      </div>
+
+      <button id="logoutBtn" class="bg-red-500 hover:bg-red-400 text-white px-4 py-2 rounded-lg font-medium transition">
+        Logout
+      </button>
+    </div>
+  </div>
+
+  <!-- 🔥 MAIN CONTENT -->
+  <div class="flex-1 flex items-center justify-center p-6">
+    <div class="max-w-7xl w-full bg-slate-800/80 backdrop-blur-xl rounded-3xl shadow-2xl p-10 border border-slate-700/50">
+
+      <div class="text-center mb-10">
+        <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-4 tracking-tight">
+          ChaiCode Cinema - Now Showing<br><br>
+          <span class="text-red-400 font-bold">Dhurandhar The Revenge</span>
+        </h1>
+        <p class="text-slate-400 text-lg">
+          Jassi ko ghar ki yaad kyu nhi aai?
+        </p>
+      </div>
+
+      <!-- Legend -->
+      <div class="flex justify-center mb-10">
+        <div class="bg-slate-900/50 rounded-full px-6 py-3 border border-slate-700 flex gap-8 items-center">
+
+          <div class="flex items-center gap-3">
+            <div class="w-4 h-4 rounded-full bg-emerald-500"></div>
+            <span class="text-slate-300 font-medium">Available</span>
+          </div>
+
+          <div class="w-px h-6 bg-slate-700"></div>
+
+          <div class="flex items-center gap-3">
+            <div class="w-4 h-4 rounded-full bg-rose-500/20 border border-rose-500/50"></div>
+            <span class="text-slate-400 font-medium">Booked</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Seats -->
+      <div class="flex justify-center">
+        <div class="bg-slate-900/40 p-8 rounded-2xl border border-slate-700/50 shadow-inner">
+          <table id="tbl" class="border-separate border-spacing-4 mx-auto"></table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 🔥 SCRIPT -->
+  <script>
+    let currentUser = null;
+
+    // Load user (for greeting only)
+    async function loadUser() {
+      try {
+        const res = await fetch("/auth/me", {
+          credentials: "include",
+        });
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+        currentUser = data.user;
+
+        document.getElementById("greeting").innerText =
+          `Welcome, ${currentUser.firstName} 👋`;
+
+        document.getElementById("avatar").innerText =
+          currentUser.firstName.charAt(0).toUpperCase();
+
+      } catch (err) {
+        console.log("User load failed");
+      }
+    }
+
+    // Logout
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      if (!confirm("Are you sure you want to logout?")) return;
+
+      await fetch("/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      window.location.href = "/login.html";
+    });
+
+    // Seat logic
+    async function run() {
+      const tbl = document.getElementById("tbl");
+
+      const res = await fetch("/seats", {
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        window.location.href = "/login.html";
+        return;
+      }
+
+      const seats = (await res.json()).sort((a, b) => a.id - b.id);
+
+      let tr;
+
+      for (let i = 0; i < seats.length; i++) {
+        if (i % 8 === 0) tr = document.createElement("tr");
+
+        const td = document.createElement("td");
+
+        const baseClasses =
+          "w-32 h-32 rounded-2xl text-center text-2xl font-bold transition-all relative group";
+
+        // Booked seat
+        if (seats[i].isbooked) {
+          td.className = `${baseClasses} bg-rose-500/10 text-rose-500/60 border border-rose-500/20 cursor-not-allowed`;
+
+          td.innerHTML = `
+            <span>${seats[i].id}</span>
+            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1 bg-slate-900 text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition">
+              <span class="text-rose-400 font-bold">Already Booked</span>
+            </div>
+          `;
+        }
+
+        // Available seat
+        else {
+          td.className = `${baseClasses} bg-emerald-500 text-white cursor-pointer hover:bg-emerald-400`;
+          td.innerHTML = `<span>${seats[i].id}</span>`;
+        }
+
+        // Click booking
+        td.addEventListener("click", async function () {
+          if (td.classList.contains("cursor-not-allowed")) return;
+
+          const id = seats[i].id;
+
+          if (!confirm(`Do you want to book seat ${id}?`)) return;
+
+          try {
+            const name = currentUser?.firstName;
+
+            const res = await fetch(`/${id}/${name}`, {
+              method: "PUT",
+              credentials: "include",
+            });
+
+            const data = await res.json();
+
+            if (data.error) {
+              alert("Seat already booked!");
+            } else {
+              alert("Booked successfully!");
+              location.reload();
+            }
+
+          } catch (err) {
+            alert("Error booking seat");
+          }
+        });
+
+        tr.appendChild(td);
+        tbl.appendChild(tr);
+      }
+    }
+
+    // Init
+    (async () => {
+      await loadUser();
+      run();
+    })();
+  </script>
+
+</body>
+</html>

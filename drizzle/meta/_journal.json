@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1776162561771,
+      "tag": "0000_tan_aqueduct",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1776162839369,
+      "tag": "0001_lush_wendell_rand",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776252584386,
+      "tag": "0002_typical_diamondback",
+      "breakpoints": true
+    }
+  ]
+}

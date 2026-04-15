@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Signup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen flex items-center justify-center bg-slate-900 text-white">
+
+  <div class="bg-slate-800 p-8 rounded-2xl w-96 shadow-xl">
+    <h2 class="text-2xl font-bold mb-6 text-center text-cyan-400">Signup</h2>
+
+    <form id="signupForm" class="space-y-4">
+      <input type="text" placeholder="First Name" class="w-full p-3 rounded bg-slate-700" required />
+      <input type="text" placeholder="Last Name" class="w-full p-3 rounded bg-slate-700" required />
+      <input type="email" placeholder="Email" class="w-full p-3 rounded bg-slate-700" required />
+      <input type="password" placeholder="Password" class="w-full p-3 rounded bg-slate-700" required />
+
+      <button class="w-full bg-cyan-500 p-3 rounded font-bold hover:bg-cyan-400">
+        Signup
+      </button>
+    </form>
+
+    <p class="text-center mt-4 text-sm text-slate-400">
+      Already have an account?
+      <a href="/login.html" class="text-emerald-400">Login</a>
+    </p>
+  </div>
+
+<script>
+
+    async function checkAuth() {
+  try {
+    const res = await fetch("/auth/me", {
+      credentials: "include"
+    });
+
+    if (res.ok) {
+      window.location.href = "/";
+    }
+  } catch (err) {
+    console.log("Not logged in");
+  }
+}
+
+checkAuth();
+
+/************************************************************/
+
+document.getElementById("signupForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const [firstName, lastName, email, password] = [
+    e.target[0].value,
+    e.target[1].value,
+    e.target[2].value,
+    e.target[3].value,
+  ];
+
+  const res = await fetch("/auth/sign-up", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ firstName, lastName, email, password })
+  });
+
+  const data = await res.json();
+
+  if (res.ok) {
+    alert("Signup successful! Please verify email.");
+    window.location.href = "/login.html";
+  } else {
+    alert(data.message || "Signup failed");
+  }
+});
+</script>
+
+</body>
+</html>
