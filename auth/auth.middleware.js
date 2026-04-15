@@ -49,12 +49,12 @@ export const protect = async (req, res, next) => {
             });
         }
 
-        if (!user.emailVerified) {
-            return res.status(403).json({
-                success: false,
-                message: "Please verify your email first",
-            });
-        }
+        // if (!user.emailVerified) {
+        //     return res.status(403).json({
+        //         success: false,
+        //         message: "Please verify your email first",
+        //     });
+        // }
 
         delete user.password;
         delete user.refreshToken;
