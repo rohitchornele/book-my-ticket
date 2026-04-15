@@ -46,11 +46,11 @@ const registerServices = async ({ firstName, lastName, email, password, role }) 
         const verificationUrl = `${process.env.FRONTEND_URL}/auth/verify-email/${rawToken}`
         // console.log("reister user = ", user)
 
-        try {
-            await sendVerificationEmail(user, verificationUrl);
-        } catch (err) {
-            console.log("Email failed:", err.message);
-        }
+        // try {
+        //     await sendVerificationEmail(user, verificationUrl);
+        // } catch (err) {
+        //     console.log("Email failed:", err.message);
+        // }
 
         const userObj = { ...user };
         delete userObj.password;
@@ -81,9 +81,9 @@ const loginService = async ({ email, password }) => {
             throw ApiError.badRequest("Invalid credentials")
         }
 
-        if (!user.emailVerified) {
-            throw ApiError.forbidden("Please verify your email, before login")
-        }
+        // if (!user.emailVerified) {
+        //     throw ApiError.forbidden("Please verify your email, before login")
+        // }
 
         const refreshToken = generateRefreshToken({ id: user.id })
         const accessToken = generateAccessToken({ id: user.id, role: user.role })
