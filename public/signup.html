@@ -38,9 +38,15 @@
 
     if (res.ok) {
       window.location.href = "/";
+      return;
     }
+    
+    if (res.status === 401) {
+      return;
+    }
+
   } catch (err) {
-    console.log("Not logged in");
+    console.log("Network error");
   }
 }
 

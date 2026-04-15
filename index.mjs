@@ -110,6 +110,7 @@ app.get("/check-seats", async (req, res) => {
   res.json(result.rows);
 });
 
+
 //get all seats
 app.get("/seats", protect, async (req, res) => {
   const result = await pool.query("select * from seats"); // equivalent to Seats.find() in mongoose
