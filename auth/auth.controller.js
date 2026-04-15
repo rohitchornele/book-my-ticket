@@ -24,14 +24,16 @@ const login = async (req, res) => {
         res.cookie("accessToken", accessToken, {
             httpOnly: true,
             secure: true, // true in production
-            sameSite: "none",
+            sameSite: "lax",
+            path: '/',
             maxAge: 15 * 60 * 1000,
         });
 
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
-            secure: true,
-            sameSite: "none",
+            secure: true, // true in production
+            sameSite: "lax",
+            path: '/',
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
@@ -47,18 +49,18 @@ const login = async (req, res) => {
 
 export const verifyEmail = async (req, res, next) => {
     try {
-    const { token } = req.params;
+        const { token } = req.params;
 
-    const user = await verifyEmailService(token);
+        const user = await verifyEmailService(token);
 
-    if (!user.emailVerified) {
-      return res.redirect("/login.html?verified=false");
+        if (!user.emailVerified) {
+            return res.redirect("/login.html?verified=false");
+        }
+        return res.redirect("/login.html?verified=true");
+
+    } catch (error) {
+        return res.redirect("/login.html?verified=false");
     }
-    return res.redirect("/login.html?verified=true");
-
-  } catch (error) {
-    return res.redirect("/login.html?verified=false");
-  }
 };
 
 const getMe = (req, res) => {
