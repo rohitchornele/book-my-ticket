@@ -45,7 +45,11 @@ const registerServices = async ({ firstName, lastName, email, password, role }) 
     const verificationUrl = `${process.env.FRONTEND_URL}/auth/verify-email/${rawToken}`
     // console.log("reister user = ", user)
 
-    await sendVerificationEmail(user, verificationUrl);
+    try {
+        await sendVerificationEmail(user, verificationUrl);
+    } catch (err) {
+        console.log("Email failed:", err.message);
+    }
 
     const userObj = { ...user };
     delete userObj.password;
@@ -148,9 +152,9 @@ const verifyEmailService = async (token) => {
     user.verificationToken = null;
 
     await db.update(userTable).set({
-            emailVerified: true,
-            verificationToken: null,
-        }).where(eq(userTable.id, user.id));
+        emailVerified: true,
+        verificationToken: null,
+    }).where(eq(userTable.id, user.id));
 
     return user
 }
