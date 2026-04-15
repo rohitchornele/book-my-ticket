@@ -25,7 +25,7 @@ export const userTable = pgTable('users', {
     verificationToken: text('verification_token'),
     refreshToken: text('refresh_token'),
     resetPasswordToken: text('reset_password_token'),
-    resetPasswordExpires: text('rest_password_expires'),
+    resetPasswordExpires: text('reset_password_expires'),
 
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').$onUpdate(() => new Date()),
