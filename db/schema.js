@@ -1,12 +1,6 @@
 import { boolean, pgTable, serial, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core'
 
 
-// CREATE TABLE IF NOT EXISTS seats (
-//   id SERIAL PRIMARY KEY,
-//   name VARCHAR(255),
-//   isbooked BOOLEAN DEFAULT FALSE
-// );
-
 export const seats = pgTable('seats', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }),

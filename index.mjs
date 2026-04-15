@@ -17,6 +17,9 @@ import path from 'path'
 import cookieParser from "cookie-parser";
 import { protect } from "./auth/auth.middleware.js";
 
+// import pkg from "pg";
+// const { Pool } = pkg;
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const port = process.env.PORT || 8080;
@@ -47,6 +50,47 @@ const pool = new pg.Pool({
     rejectUnauthorized: false,
   },
 });
+
+
+// 🔥 Create tables + seed data (RUN ONCE)
+await pool.query(`
+  CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+  CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    first_name VARCHAR(64) NOT NULL,
+    last_name VARCHAR(64),
+
+    email VARCHAR(322) NOT NULL UNIQUE,
+    email_verified BOOLEAN DEFAULT FALSE NOT NULL,
+
+    password VARCHAR(66),
+    salt TEXT,
+
+    role VARCHAR(20) DEFAULT 'customer',
+
+    verification_token TEXT,
+    refresh_token TEXT,
+    reset_password_token TEXT,
+    reset_password_expires TEXT,
+
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS seats (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255),
+    user_id UUID,
+    isbooked BOOLEAN DEFAULT FALSE,
+    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+  );
+
+  INSERT INTO seats (isbooked)
+  SELECT FALSE FROM generate_series(1, 20)
+  WHERE NOT EXISTS (SELECT 1 FROM seats);
+`);
 
 const app = new express();
 app.use(cors());
